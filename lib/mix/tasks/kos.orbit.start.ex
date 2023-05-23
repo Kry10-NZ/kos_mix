@@ -13,11 +13,14 @@ defmodule Mix.Tasks.Kos.Orbit.Start do
   docker (20.10.17+) and docker compose (2.6.0+) are required.
 
       $ mix kos.orbit.start
+
   """
 
   @impl true
   @doc false
   def run(_args) do
+    KosMix.check_deps()
+
     docker = System.find_executable("docker")
 
     unless docker do
@@ -34,27 +37,26 @@ defmodule Mix.Tasks.Kos.Orbit.Start do
 
     orbit_tag = File.read!(orbit_version_file) |> String.trim()
 
-    docker_compose_file =
-      Path.join([KosMix.get_default_toolchain(), "orbit", "docker-compose.yml"])
+    docker_composer = Path.join([KosMix.get_default_toolchain(), "orbit", "bin", "composer"])
 
-    unless File.regular?(docker_compose_file) do
-      Mix.raise("Could not find Orbit docker-compose.yml at: " <> docker_compose_file)
+    unless File.regular?(docker_composer) do
+      Mix.raise("Could not find Orbit composer at: " <> docker_composer)
     end
 
     with :ok <- pull_image(docker, use_sudo, orbit_tag) do
-      compose_up(docker, docker_compose_file, orbit_tag, use_sudo)
+      compose_up(docker_composer, orbit_tag, use_sudo)
     end
   end
 
-  defp compose_up(docker, docker_compose_file, orbit_tag, use_sudo) do
-    args = "compose -f #{docker_compose_file} --profile orbit_tag up --force-recreate"
+  defp compose_up(docker_composer, orbit_tag, use_sudo) do
+    args = "--profile orbit_tag --down --up"
     exec = if use_sudo, do: "sudo ", else: ""
 
     """
 
     To start orbit run:
 
-    #{exec}ORBIT_TAG=#{orbit_tag} #{docker} #{args}
+    #{exec}ORBIT_TAG=#{orbit_tag} #{docker_composer} #{args}
 
     To stop orbit <ctrl-c> the running console.
     """
@@ -76,6 +78,21 @@ defmodule Mix.Tasks.Kos.Orbit.Start do
   end
 
   defp pull_image(docker, use_sudo, orbit_tag) do
+    command = "pull ghcr.io/kry10-nz/release:#{orbit_tag}"
+
+    case run_docker_cmd(docker, use_sudo, command,
+           stderr_to_stdout: true,
+           into: IO.stream()
+         ) do
+      :ok ->
+        :ok
+
+      {:error, exit_status} ->
+        Mix.shell().error("Failed to authenticate. Exit status: #{exit_status}")
+    end
+  end
+
+  defp run_docker_cmd(docker, use_sudo, command, opts) do
     nix_shell = System.find_executable("nix-shell")
 
     unless nix_shell, do: Mix.raise("Could not find nix-shell. Is `nix` installed?")
@@ -99,15 +116,14 @@ defmodule Mix.Tasks.Kos.Orbit.Start do
     args = [
       askpass_shell,
       "--run",
-      "#{sudo_args} #{docker} --config #{kos_home}/.docker pull ghcr.io/kry10-nz/release:#{orbit_tag}"
+      "#{sudo_args} #{docker} --config #{kos_home}/.docker #{command}"
     ]
 
-    case System.cmd(nix_shell, args, stderr_to_stdout: true, into: IO.stream()) do
+    case System.cmd(nix_shell, args, opts) do
       {_output, 0} ->
         :ok
 
       {_, exit_status} ->
-        Mix.shell().error("Failed to authenticate. Exit status: #{exit_status}")
         {:error, exit_status}
     end
   end

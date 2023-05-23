@@ -38,11 +38,19 @@ defmodule Mix.Tasks.Kos.Deps.Check do
   defp checks(check, quiet) do
     case check do
       "all" ->
-        check_nix(quiet)
-        check_docker(quiet)
-        check_docker_compose(quiet)
-        check_curl(quiet)
-        check_elixir(quiet)
+        Enum.reduce(
+          [
+            &check_nix/1,
+            &check_docker/1,
+            &check_docker_compose/1,
+            &check_curl/1,
+            &check_elixir/1
+          ],
+          :ok,
+          fn check, status ->
+            if check.(quiet) == :error, do: :error, else: status
+          end
+        )
 
       "nix" ->
         check_nix(quiet)

@@ -4,13 +4,7 @@
 
 defmodule Mix.Tasks.Kos do
   use Mix.Task
-
-  @shortdoc "Prints Kos help information"
-
-  @moduledoc """
-  Prints Kos tasks and their information.
-      $ mix kos
-  """
+  @moduledoc false
 
   @impl true
   @doc false

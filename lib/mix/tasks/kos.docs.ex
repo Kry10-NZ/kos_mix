@@ -23,6 +23,8 @@ defmodule Mix.Tasks.Kos.Docs do
   @impl true
   @doc false
   def run(_) do
+    KosMix.check_deps()
+
     default = KosMix.get_default_toolchain()
 
     unless File.exists?(default) do

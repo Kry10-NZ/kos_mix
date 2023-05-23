@@ -40,11 +40,27 @@ defmodule KosMix do
       "qemu-arm-virt",
       "imx8mm-evk",
       "x86_64",
-      "nitrogen6sx"
+      "nitrogen6sx",
+      "rpi4"
     ]
   end
 
   def supported_platform(platform) do
     Enum.member?(supported_platforms(), platform)
+  end
+
+  def check_deps() do
+    case Mix.Task.run("kos.deps.check", ["--quiet"]) do
+      :ok ->
+        :ok
+
+      :error ->
+        """
+        Missing KOS toolchain dependencies.
+
+        Run 'mix kos.deps.check' to check for missing prerequisite dependencies.
+        """
+        |> Mix.raise()
+    end
   end
 end

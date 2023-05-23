@@ -29,15 +29,25 @@ defmodule Mix.Tasks.Kos.Install do
   """
 
   @default_tar_url_base "https://github.com/Kry10-NZ/release/archive/refs/tags/"
-  @default_tar_version "1.0.0-beta-rc3"
+  @default_tar_version "1.0.0-beta-rc4"
 
-  defp ver_sha("1.0.0-beta"), do: "e4b20a81b09c694f0953f72a7e0ca5d1aeb6db541848b4f5cd903573387cba71"
-  defp ver_sha("1.0.0-beta-rc2"), do: "0d59ffad9fc7866d1e3d325a6dc9176c4c8c0800975968af4ea793cd02c3bc0d"
-  defp ver_sha("1.0.0-beta-rc3"), do: "8d2f0dc3b661ad6d428c83cd35a4d0545d95faa6726264cf7e5d90f984bd215f"
+  defp ver_sha("1.0.0-beta"),
+    do: "e4b20a81b09c694f0953f72a7e0ca5d1aeb6db541848b4f5cd903573387cba71"
+
+  defp ver_sha("1.0.0-beta-rc2"),
+    do: "0d59ffad9fc7866d1e3d325a6dc9176c4c8c0800975968af4ea793cd02c3bc0d"
+
+  defp ver_sha("1.0.0-beta-rc3"),
+    do: "8d2f0dc3b661ad6d428c83cd35a4d0545d95faa6726264cf7e5d90f984bd215f"
+
+  defp ver_sha("1.0.0-beta-rc4"),
+    do: "e13b41f757d94b5a68289b2eeabc12edcb7f7240e8912bbe81fe9efd0ce0c59f"
 
   @impl true
   @doc false
   def run(args) do
+    KosMix.check_deps()
+
     Mix.shell().info("Installing KOS code")
     nix_shell = System.find_executable("nix-shell")
 
